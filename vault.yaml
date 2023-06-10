@@ -1,0 +1,146 @@
+---
+- name: Install Vault Server
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: Check if Vault server is already setup
+    set_fact:
+      vault_setup: "{{ lookup('pipe', 'aws secretsmanager list-secrets --filter --region {{ region }} \"Key=name,Values={{ vault_secret_name }}\" | jq -r .SecretList[0].Name') }}"
+  
+  - name: Update APT
+    apt:
+      upgrade: dist
+      update_cache: yes
+    tags:
+      - core
+
+  - name: Install prerequisites
+    apt:
+      name: "{{ item }}"
+      update_cache: yes
+    loop:
+      - jq
+      - awscli
+    tags:
+      - core
+
+  - name: Create group vault
+    group:
+      name: vault
+      state: present
+    tags:
+      - core
+
+  - name: Create user vault
+    user:
+      name: vault
+      group: vault
+      state: present
+      createhome: yes
+      home: /home/vault
+      shell: /bin/bash
+    tags:
+      - render
+      - core
+
+  - name: Create directories
+    become: true
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ user }}"
+      group: "{{ group }}"
+      mode: "{{ mode }}"
+    with_items:
+      - "{{ vault_home }}"
+      - "{{ vault_bin_home }}"
+      - "{{ vault_policy_home }}"
+      - "{{ vault_config_home }}"
+      - "{{ vault_log_home }}"
+    tags:
+      - render
+      - core
+
+  - name: Render template file
+    template:
+      src: "templates/{{ item }}"
+      dest: "{{ vault_bin_home }}/{{ item }}"
+      owner: "{{ user }}"
+      group: "{{ group }}"
+      mode: "700"
+    with_items:
+      - vault_install.sh
+      - vault_initialization.sh
+      - vault_create_policies.sh
+      - vault_setup_kv_engine.sh
+      - vault_create_orphan_token.sh
+    tags:
+      - render
+      - core
+
+  - name: Copy Vault policies
+    copy:
+      src: "policies/{{ item }}"
+      dest: "{{ vault_policy_home }}/{{ item }}"
+      owner: "{{ user }}"
+      group: "{{ group }}"
+      mode: "700"
+    with_items: 
+      - vault-admin.hcl
+    tags:
+      - render
+      - core
+
+  - name: Copy main configuration
+    template:
+      src: "templates/vault_config.hcl"
+      dest: "{{ vault_config_home }}/vault_config.hcl"
+      owner: "{{ user }}"
+      group: "{{ group }}"
+      mode: "{{ mode }}"
+    tags:
+      - render
+      - core
+
+  - name: Install Vault
+    command: "{{ vault_bin_home }}/vault_install.sh"
+    tags:
+      - render
+      - core
+
+  - name: Set systemd vault.service
+    template:
+      src: "templates/vault.service"
+      dest: "/usr/lib/systemd/system/vault.service"
+      mode: "{{ mode }}"
+    tags:
+      - render
+
+  - name: Start and enable Vault
+    systemd:
+      name: vault
+      state: restarted
+      daemon_reload: yes
+      enabled: yes
+    run_once: true
+
+  - name: Initialization Vault server
+    command: "{{ vault_bin_home }}/vault_initialization.sh"
+    when: vault_setup == 'null'
+
+  - name: Create policies
+    command: "{{ vault_bin_home }}/vault_create_policies.sh"
+    tags:
+      - policies
+
+  - name: Enable KV2 engine
+    command: "{{ vault_bin_home }}/vault_setup_kv_engine.sh"
+    tags:
+      - kv2
+
+  - name: Create Vault token for CICD
+    command: "{{ vault_bin_home }}/vault_create_orphan_token.sh"
+    tags:
+      - cicd-token

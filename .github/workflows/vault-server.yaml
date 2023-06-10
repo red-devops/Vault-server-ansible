@@ -1,0 +1,43 @@
+name: "Install Vault server"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        options:
+          - 'dev'
+          - 'uat'
+          - 'prod'
+
+env:
+  ENVIRONMENT: "${{ github.event.inputs.environment }}"
+
+jobs:
+  vault-server:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download SSH key
+        run: |
+          aws s3 cp \
+          s3://red-devops-workout-recorder/post-provisioning/vault_${{ env.ENVIRONMENT }}_key.pem \
+          vault_${{ env.ENVIRONMENT }}_key.pem
+          chmod 600 vault_${{ env.ENVIRONMENT }}_key.pem
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook \
+          vault.yaml
+          -i ./inventories/${{ env.ENVIRONMENT }}/inventory_aws_ec2.yaml \
+          --private-key vault_${{ env.ENVIRONMENT }}_key.pem \
+      
+      - name: Remove SSH key
+        if: always()
+        run: rm vault_${{ env.ENVIRONMENT }}_key.pem -f
+        continue-on-error: true
+

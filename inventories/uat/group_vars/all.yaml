@@ -1,0 +1,5 @@
+# Key to unseal vault on dev environment
+# each environment should have its own kms key
+kms_key_id: "2dcbaf6f-b81c-442f-ba2c-76b6118abb3a"
+env: uat
+vault_init_secret: "{{ vault_secret_name }}-{{ env }}-root"

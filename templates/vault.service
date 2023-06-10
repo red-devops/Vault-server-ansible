@@ -1,0 +1,16 @@
+[Unit]
+Description=Vault Server
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Restart=on-failure
+PermissionsStartOnly=true
+ExecStart=/bin/sh -c 'exec vault server -config={{ vault_config_home }}/vault_config.hcl >> {{ vault_log_home }}/vault.log 2>&1'
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGTERM
+User=vault
+Group=vault
+
+[Install]
+WantedBy=multi-user.target
