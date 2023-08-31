@@ -32,7 +32,7 @@ jobs:
       - name: Run Ansible Playbook
         run: |
           ansible-playbook \
-          vault.yaml
+          vault.yaml \
           -i ./inventories/${{ env.ENVIRONMENT }}/inventory_aws_ec2.yaml \
           --private-key vault_${{ env.ENVIRONMENT }}_key.pem \
       
