@@ -11,7 +11,7 @@ storage "dynamodb" {
 api_addr = "http://{{ private_ip_address }}:8200"
 cluster_addr = "http://{{ private_ip_address }}:8201"
 
-ui = false
+ui = true
 
 seal "awskms" {
 region     = "{{ region }}"

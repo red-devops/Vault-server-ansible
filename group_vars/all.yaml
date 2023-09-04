@@ -8,7 +8,7 @@ vault_bin_home: "{{ vault_home }}/bin"
 vault_policy_home: "{{ vault_home }}/policy"
 vault_config_home: "{{ vault_home }}/config"
 vault_log_home: "{{ vault_home }}/log"
-vault_secret_name: "vault-secret-init-4"
+vault_secret_name: "vault-secret-init"
 
 #AWS
 region: "eu-central-1"

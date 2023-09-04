@@ -5,10 +5,6 @@
   gather_facts: false
 
   tasks:
-  - name: Check if Vault server is already setup
-    set_fact:
-      vault_setup: "{{ lookup('pipe', 'aws secretsmanager list-secrets --filter --region {{ region }} \"Key=name,Values={{ vault_secret_name }}\" | jq -r .SecretList[0].Name') }}"
-  
   - name: Update APT
     apt:
       upgrade: dist
@@ -128,7 +124,6 @@
 
   - name: Initialization Vault server
     command: "{{ vault_bin_home }}/vault_initialization.sh"
-    when: vault_setup == 'null'
 
   - name: Create policies
     command: "{{ vault_bin_home }}/vault_create_policies.sh"

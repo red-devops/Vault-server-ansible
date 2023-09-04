@@ -9,7 +9,7 @@ aws secretsmanager create-secret --name cicd-vault-{{ env }}-token --description
 if [ $? -eq 0 ]; then
     echo "Created a new secret."
 else
-    # Error - secret already exists, try to overwrite it
+    echo "Failed to create a new secret. Trying to update the existing one..."
     aws secretsmanager update-secret --secret-id cicd-vault-{{ env }}-token --description "Long term CICD token for Vault-{{ env }}" --secret-string '{"cicd-token":"'"$TOKEN"'"}' --region {{ region }} > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "Overwrote the existing secret."

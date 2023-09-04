@@ -41,7 +41,7 @@ path "sys/auth"
 # Enable and manage the key/value secrets engine at `secret/` path
 
 # List, create, update, and delete key/value secrets
-path "secret/*"
+path "kv/*"
 {
   capabilities = ["create", "read", "update", "delete", "list", "sudo"]
 }

@@ -7,6 +7,8 @@ cleanup() {
 
 trap cleanup EXIT
 
+set -x
+
 sleep 5
       
 echo -n "{" > vault_initialization.json
@@ -29,5 +31,17 @@ then
   exit ${errors}
 else
   aws secretsmanager create-secret --name {{ vault_init_secret }} --description "Vault {{ env }} recovery keys" --secret-string file://vault_initialization.json --region {{ region }}
+  if [ $? -eq 0 ]; then
+    echo "Created a new secret."
+  else
+    echo "Failed to create a new secret. Trying to update the existing one..."
+    aws secretsmanager update-secret --secret-id {{ vault_init_secret }} --description "Vault {{ env }} recovery keys" --secret-string file://vault_initialization.json --region {{ region }}
+    if [ $? -eq 0 ]; then
+        echo "Overwrote the existing secret."
+        exit 0
+    else
+        echo "An error occurred while creating or overwriting the secret."
+        exit 1
+    fi
+  fi
 fi
-exit 0
