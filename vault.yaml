@@ -72,6 +72,8 @@
       - vault_create_policies.sh
       - vault_setup_kv_engine.sh
       - vault_create_orphan_token.sh
+      - vault_create_consul_keygen.sh
+      - vault_create_nomad_keygen.sh
     tags:
       - render
       - core
@@ -139,3 +141,33 @@
     command: "{{ vault_bin_home }}/vault_create_orphan_token.sh"
     tags:
       - cicd-token
+
+  - name: Install consul bin
+    unarchive:
+      src: "{{ item }}"
+      dest: "/tmp"
+      remote_src: yes
+      owner: "{{ user }}"
+      group: "{{ group }}"
+    with_items:
+      - "https://releases.hashicorp.com/consul/1.16.0/consul_1.16.0_linux_amd64.zip"
+
+  - name: Create and save Consul keygen
+    command: "{{ vault_bin_home }}/vault_create_consul_keygen.sh"
+    tags:
+      - consul-keygen
+
+  - name: Install nomad bin
+    unarchive:
+      src: "{{ item }}"
+      dest: "/tmp"
+      remote_src: yes
+      owner: "{{ user }}"
+      group: "{{ group }}"
+    with_items:
+      - "https://releases.hashicorp.com/nomad/1.6.0/nomad_1.6.0_linux_amd64.zip"
+
+  - name: Create and save Nomad keygen
+    command: "{{ vault_bin_home }}/vault_create_nomad_keygen.sh"
+    tags:
+      - nomad-keygen
